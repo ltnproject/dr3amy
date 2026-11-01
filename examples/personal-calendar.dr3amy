@@ -1,0 +1,74 @@
+{
+  "$format": "dr3amy",
+  "$version": "1.0",
+  "$type": "calendar",
+  "metadata": {
+    "id": "example-calendar-0001",
+    "name": "Personal Calendar",
+    "created": "2026-11-01T00:00:00Z",
+    "modified": "2026-11-01T00:00:00Z"
+  },
+  "data": {
+    "timezone": "Asia/Bangkok",
+    "categories": [
+      {
+        "id": "default",
+        "name": "General",
+        "color": "#7c5cff"
+      },
+      {
+        "id": "work",
+        "name": "Work",
+        "color": "#3b82f6"
+      },
+      {
+        "id": "health",
+        "name": "Health",
+        "color": "#10b981"
+      }
+    ],
+    "events": [
+      {
+        "id": "e1",
+        "title": "Weekly planning",
+        "start": "2026-11-02T09:00",
+        "end": "2026-11-02T10:00",
+        "category": "work",
+        "location": "Studio",
+        "rrule": {
+          "freq": "weekly"
+        },
+        "reminder": 10
+      },
+      {
+        "id": "e2",
+        "title": "Run",
+        "start": "2026-11-03T06:30",
+        "end": "2026-11-03T07:15",
+        "category": "health",
+        "rrule": {
+          "freq": "daily",
+          "interval": 2,
+          "count": 10
+        }
+      },
+      {
+        "id": "e3",
+        "title": "Loy Krathong",
+        "start": "2026-11-24",
+        "allDay": true,
+        "category": "default",
+        "description": "Festival of lights."
+      },
+      {
+        "id": "e4",
+        "title": "Design review",
+        "start": "2026-11-05T14:00",
+        "end": "2026-11-05T15:30",
+        "category": "work",
+        "description": "Review the new file format spec.",
+        "reminder": 30
+      }
+    ]
+  }
+}

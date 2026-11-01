@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dr3amy.local/schemas/dr3amy-1.0.json",
+  "title": "Dr3amy document, format 1.0",
+  "type": "object",
+  "required": ["$format", "$version", "$type", "metadata", "data"],
+  "properties": {
+    "$format": { "const": "dr3amy" },
+    "$version": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "$type": { "enum": ["calendar", "document", "project", "database", "settings", "workspace"] },
+    "metadata": {
+      "type": "object",
+      "required": ["name", "created", "modified"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "created": { "type": "string", "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d+)?Z$" },
+        "modified": { "type": "string", "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d+)?Z$" }
+      }
+    },
+    "data": { "type": "object" }
+  },
+  "allOf": [
+    { "if": { "properties": { "$type": { "const": "calendar" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/calendar" } } } },
+    { "if": { "properties": { "$type": { "const": "document" } } }, "then": { "properties": { "data": { "required": ["content"], "properties": { "content": { "type": "string" } } } } } },
+    { "if": { "properties": { "$type": { "const": "project" } } }, "then": { "properties": { "data": { "required": ["tasks"], "properties": { "tasks": { "type": "array", "items": { "type": "object", "required": ["title"], "properties": { "title": { "type": "string" } } } } } } } } },
+    { "if": { "properties": { "$type": { "const": "database" } } }, "then": { "properties": { "data": { "required": ["columns", "rows"], "properties": { "columns": { "type": "array", "items": { "type": "object", "required": ["name"] } }, "rows": { "type": "array" } } } } } },
+    { "if": { "properties": { "$type": { "const": "settings" } } }, "then": { "properties": { "data": { "required": ["values"], "properties": { "values": { "type": "object" } } } } } },
+    { "if": { "properties": { "$type": { "const": "workspace" } } }, "then": { "properties": { "data": { "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#" } } } } } } }
+  ],
+  "$defs": {
+    "calendar": {
+      "required": ["timezone", "categories", "events"],
+      "properties": {
+        "timezone": { "type": "string" },
+        "categories": { "type": "array", "items": { "type": "object", "required": ["id", "name", "color"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "color": { "pattern": "^#[0-9a-fA-F]{6}$" } } } },
+        "events": { "type": "array", "items": { "type": "object", "required": ["id", "title", "start"], "properties": {
+          "id": { "type": "string" }, "title": { "type": "string" }, "allDay": { "type": "boolean" },
+          "start": { "type": "string", "pattern": "^\\d{4}-\\d\\d-\\d\\d(T\\d\\d:\\d\\d)?$" },
+          "end": { "type": "string", "pattern": "^\\d{4}-\\d\\d-\\d\\d(T\\d\\d:\\d\\d)?$" },
+          "category": { "type": "string" }, "location": { "type": "string" }, "description": { "type": "string" },
+          "reminder": { "type": ["integer", "null"], "minimum": 0 },
+          "rrule": { "type": "object", "required": ["freq"], "properties": { "freq": { "enum": ["daily", "weekly", "monthly", "yearly"] }, "interval": { "type": "integer", "minimum": 1 }, "count": { "type": "integer", "minimum": 1 }, "until": { "type": "string", "pattern": "^\\d{4}-\\d\\d-\\d\\d$" } } }
+        } } }
+      }
+    }
+  }
+}

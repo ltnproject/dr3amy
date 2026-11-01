@@ -1,0 +1,14 @@
+{
+  "$format": "dr3amy",
+  "$version": "2.0",
+  "$type": "document",
+  "metadata": {
+    "id": "example-document-0001",
+    "name": "Welcome to Dr3amy",
+    "created": "2026-11-01T00:00:00Z",
+    "modified": "2026-11-01T00:00:00Z"
+  },
+  "data": {
+    "content": "Dr3amy documents are plain JSON.\nOpen this file in a text editor to see."
+  }
+}

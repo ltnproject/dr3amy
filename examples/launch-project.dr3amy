@@ -1,0 +1,23 @@
+{
+  "$format": "dr3amy",
+  "$version": "1.0",
+  "$type": "project",
+  "metadata": {
+    "id": "example-project-0001",
+    "name": "Launch plan",
+    "created": "2026-11-01T00:00:00Z",
+    "modified": "2026-11-01T00:00:00Z"
+  },
+  "data": {
+    "tasks": [
+      {
+        "title": "Write spec",
+        "done": true
+      },
+      {
+        "title": "Ship v1",
+        "done": false
+      }
+    ]
+  }
+}

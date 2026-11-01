@@ -1,0 +1,13 @@
+{
+  "$format": "dr3amy",
+  "$version": "0.9",
+  "$type": "document",
+  "metadata": {
+    "title": "Legacy 0.9 file",
+    "created": "2026-11-01T00:00:00Z",
+    "modified": "2026-11-01T00:00:00Z"
+  },
+  "data": {
+    "content": "Migrated on import."
+  }
+}

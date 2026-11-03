@@ -3,7 +3,7 @@
 Plain ES modules, no framework, no build step. What you see in the repo is what is deployed.
 
 - `index.html` + `scripts/main.js`: shell, hash router (`#/home`, `#/calendar?doc=ID`, `#/files`, `#/settings`), preferences, file import, shortcuts.
-- `core/document-engine`: create, parse, validate, migrate, serialize. No DOM access.
+- `core/document-engine`: `codec.js` (binary container + value encoding + CRC) and `engine.js` (create, parse, validate, migrate, serialize). No DOM access.
 - `core/storage`: IndexedDB (`docs`, `prefs` stores).
 - `core/utilities`: dates, recurrence expansion, iCalendar, DOM helpers.
 - `apps/*`: each exports `default mount(root, ctx, params)` and may return a cleanup function.

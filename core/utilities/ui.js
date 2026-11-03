@@ -57,18 +57,18 @@ export function toast(msg, kind = '') {
   const t = h('div', { class: 'toast ' + kind }, msg); box.append(t);
   setTimeout(() => t.remove(), kind === 'error' ? 7000 : 3500);
 }
-export function download(name, text, mime = 'application/json') {
-  const a = h('a', { href: URL.createObjectURL(new Blob([text], { type: mime })), download: name });
+export function download(name, data, mime = 'application/octet-stream') {
+  const a = h('a', { href: URL.createObjectURL(new Blob([data], { type: mime })), download: name });
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 /** Native share sheet (AirDrop appears here on Apple devices). Falls back to a download. */
-export async function shareFile(name, text, mime) {
-  const file = new File([text], name, { type: mime });
+export async function shareFile(name, data, mime) {
+  const file = new File([data], name, { type: mime });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: name }); return 'shared'; }
     catch (e) { if (e.name === 'AbortError') return 'cancelled'; }
   }
-  download(name, text, mime);
+  download(name, data, mime);
   toast('Sharing is not supported here, so the file was downloaded instead.');
   return 'downloaded';
 }
@@ -81,3 +81,6 @@ export const fmtBytes = n => n == null ? 'unknown' : n < 1024 ? n + ' B' : n < 1
 export const fmtDate = s => { const d = new Date(s); return isNaN(d) ? '—' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); };
 export const slug = s => (s || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'untitled';
 export const empty = (title, text, ...actions) => h('div', { class: 'empty' }, h('img', { src: 'assets/icons/logo.svg', alt: '', width: 56, height: 56 }), h('h3', {}, title), h('p', {}, text), h('div', { class: 'row center' }, actions));
+
+const TILE_ICON = { calendar: 'calendar', settings: 'settings' };
+export const typeTile = type => h('span', { class: 'ftile t-' + type, 'aria-hidden': 'true' }, icon(TILE_ICON[type] || 'file', 16));

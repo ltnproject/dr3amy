@@ -117,10 +117,10 @@ export default async function mount(root, ctx, params) {
   }
   const slugName = () => slug(doc().metadata.name);
   const importInto = async () => {
-    const files = await pickFiles('.dr3amy,.json,.ics,text/calendar'); let added = 0; const bad = [];
-    for (const f of files) { const t = await f.text(); let evs = [];
-      if (/\.ics$/i.test(f.name)) evs = fromICS(t);
-      else { const r = E.parse(t); if (!r.ok || r.doc.$type !== 'calendar') { bad.push(f.name + ': ' + (r.ok ? 'not a calendar' : r.errors[0])); continue; } evs = r.doc.data.events.map(e => ({ ...e, id: crypto.randomUUID() })); const have = new Set(cats().map(c => c.id)); r.doc.data.categories.forEach(c => { if (!have.has(c.id)) doc().data.categories.push(c); }); }
+    const files = await pickFiles('.dr3amy,.ics,text/calendar,application/octet-stream'); let added = 0; const bad = [];
+    for (const f of files) { const buf = new Uint8Array(await f.arrayBuffer()); let evs = [];
+      if (/\.ics$/i.test(f.name)) evs = fromICS(new TextDecoder().decode(buf));
+      else { const r = E.parse(buf); if (!r.ok || r.doc.$type !== 'calendar') { bad.push(f.name + ': ' + (r.ok ? 'not a calendar' : r.errors[0])); continue; } evs = r.doc.data.events.map(e => ({ ...e, id: crypto.randomUUID() })); const have = new Set(cats().map(c => c.id)); r.doc.data.categories.forEach(c => { if (!have.has(c.id)) doc().data.categories.push(c); }); }
       doc().data.events.push(...evs); added += evs.length; }
     if (added) await persist(); render(); toast(`${added} event(s) imported` + (bad.length ? '. Skipped: ' + bad.join('; ') : ''), bad.length ? 'error' : '');
   };
@@ -130,7 +130,7 @@ export default async function mount(root, ctx, params) {
     const mi = (ic, label, fn) => h('button', { type: 'button', onclick: e => { e.currentTarget.closest('details').open = false; fn(); } }, icon(ic, 16), label);
     const menu = h('details', { class: 'menu' }, h('summary', { class: 'icon-btn', 'aria-label': 'Calendar menu', title: 'Calendar menu' }, icon('more')), h('div', { class: 'pop' },
       mi('export', 'Export .dr3amy', () => download(slugName() + '.dr3amy', E.serialize(doc()))), mi('export', 'Export .ics', () => download(slugName() + '.ics', toICS(doc()), 'text/calendar')),
-      mi('share', 'Share…', () => shareFile(slugName() + '.dr3amy', E.serialize(doc()), 'application/json')), mi('share', 'Share as .ics…', () => shareFile(slugName() + '.ics', toICS(doc()), 'text/calendar')), h('hr'),
+      mi('share', 'Share…', () => shareFile(slugName() + '.dr3amy', E.serialize(doc()), 'application/octet-stream')), mi('share', 'Share as .ics…', () => shareFile(slugName() + '.ics', toICS(doc()), 'text/calendar')), h('hr'),
       mi('import', 'Import events…', importInto), mi('plus', 'New calendar', newCal), mi('files', 'Categories…', categoryEditor),
       mi('files', 'Rename calendar', async () => { const n = await promptBox('Rename calendar', 'Name', doc().metadata.name); if (n) { doc().metadata.name = n; await persist(); await reload(); render(); } }),
       mi('trash', 'Delete calendar', async () => { if (await confirmBox(`Delete “${doc().metadata.name}” and its ${doc().data.events.length} events from this browser?`)) { await S.delDoc(rec.id); await reload(); render(); } })));

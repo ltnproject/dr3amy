@@ -1,5 +1,6 @@
-// Dr3amy Document Engine: create, parse, validate, migrate, serialize. No DOM dependencies.
+// Dr3amy Document Engine: create, parse, validate, migrate, serialize (binary container in codec.js). No DOM dependencies.
 import { parseLocal } from '../utilities/dates.js';
+import { encodeDocument, decodeDocument, readHeader } from './codec.js';
 export const FORMAT = 'dr3amy', VERSION = '1.0', MAX_BYTES = 50 * 1024 * 1024;
 export const TYPES = ['calendar', 'document', 'project', 'database', 'settings', 'workspace'];
 export const TYPE_LABEL = { calendar: 'Calendar', document: 'Document', project: 'Project', database: 'Database', settings: 'Settings', workspace: 'Workspace' };
@@ -21,8 +22,9 @@ export function create(type, name, data) {
   return { $format: FORMAT, $version: VERSION, $type: type, metadata: { id: crypto.randomUUID(), name, created: t, modified: t }, data: data ?? defaultData[type]() };
 }
 export const touch = d => { d.metadata.modified = now(); return d; };
-export const serialize = d => JSON.stringify(d, null, 2) + '\n';
-export const size = d => new TextEncoder().encode(serialize(d)).length;
+/** Document -> binary .dr3amy bytes (Uint8Array). */
+export const serialize = d => encodeDocument(d);
+export const size = d => serialize(d).length;
 
 const CHECK = {
   calendar(d, e, W) {
@@ -102,19 +104,19 @@ export function versionStatus(v) {
   return M > 1 ? 'newer' : 'old';
 }
 
-/** Parse + migrate + validate. Never throws. */
-export function parse(text) {
+/** Decode + migrate + validate a .dr3amy file (Uint8Array or ArrayBuffer). Never throws. */
+export function parse(input) {
   const r = { ok: false, doc: null, errors: [], warnings: [], unsupported: false, migratedFrom: null };
-  if (typeof text !== 'string' || !text.trim() || text.length > MAX_BYTES) { r.errors.push('File is empty or larger than 50 MB.'); return r; }
-  let d;
-  try { d = JSON.parse(text.replace(/^\uFEFF/, '')); } catch (x) { r.errors.push('Not valid JSON: ' + x.message); return r; }
-  if (!isObj(d) || d.$format !== FORMAT) { r.errors.push('Not a Dr3amy document ($format must be "dr3amy").'); return r; }
-  if (typeof d.$version !== 'string' || !/^\d+\.\d+$/.test(d.$version)) { r.errors.push('Missing or malformed $version.'); return r; }
-  const st = versionStatus(d.$version);
-  if (st === 'newer') { r.unsupported = true; r.errors.push(`Format version ${d.$version} is newer than this build supports (1.x). Update Dr3amy to open it. Nothing was changed.`); return r; }
-  if (st === 'old') { r.unsupported = true; r.errors.push(`Format version ${d.$version} is too old to migrate automatically.`); return r; }
-  if (st === 'migrate') { r.migratedFrom = d.$version; d = MIGRATIONS[d.$version](d); r.warnings.push(`Migrated from format ${r.migratedFrom} to ${VERSION}.`); }
-  else if (d.$version !== VERSION) r.warnings.push(`Document is format ${d.$version}; this build writes ${VERSION}. Unknown fields are preserved.`);
+  let bytes;
+  try { bytes = input instanceof Uint8Array ? input : new Uint8Array(input); } catch { r.errors.push('Unreadable input.'); return r; }
+  if (!bytes.length || bytes.length > MAX_BYTES) { r.errors.push('File is empty or larger than 50 MB.'); return r; }
+  let hd; try { hd = readHeader(bytes); } catch (x) { r.errors.push(x.message); return r; }
+  const ver = hd.major + '.' + hd.minor, st = versionStatus(ver);
+  if (st === 'newer') { r.unsupported = true; r.errors.push(`Format version ${ver} is newer than this build supports (1.x). Update Dr3amy to open it. Nothing was changed.`); return r; }
+  if (st === 'old') { r.unsupported = true; r.errors.push(`Format version ${ver} is too old to migrate automatically.`); return r; }
+  let d; try { d = decodeDocument(bytes); } catch (x) { r.errors.push(x.message || 'Could not decode file.'); if (x.kind === 'unsupported') r.unsupported = true; return r; }
+  if (st === 'migrate') { r.migratedFrom = ver; d = MIGRATIONS[ver](d); r.warnings.push(`Migrated from format ${ver} to ${VERSION}.`); }
+  else if (ver !== VERSION) r.warnings.push(`Document is format ${ver}; this build writes ${VERSION}. Unknown fields are preserved.`);
   const v = validate(d);
   r.errors.push(...v.errors); r.warnings.push(...v.warnings);
   if (!r.errors.length) { r.ok = true; r.doc = d; if (!d.metadata.id) d.metadata.id = crypto.randomUUID(); }

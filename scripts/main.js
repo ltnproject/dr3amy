@@ -25,16 +25,16 @@ ctx.importFiles = async (files) => {
   for (const f of files) {
     const row = { name: f.name, ok: false, msgs: [] };
     try {
-      const text = await f.text();
+      const buf = new Uint8Array(await f.arrayBuffer());
       let doc, warnings = [];
       if (/\.ics$/i.test(f.name)) {
-        const events = fromICS(text);
+        const events = fromICS(new TextDecoder().decode(buf));
         if (!events.length) { row.msgs.push('No events found in this .ics file.'); rows.push(row); continue; }
         doc = E.create('calendar', f.name.replace(/\.ics$/i, '') || 'Imported calendar'); doc.data.events = events;
         const v = E.validate(doc); if (!v.ok) { row.msgs.push(...v.errors); rows.push(row); continue; }
         warnings.push(`${events.length} event(s) imported. Unsupported iCalendar properties were ignored.`);
       } else {
-        const r = E.parse(text);
+        const r = E.parse(buf);
         if (!r.ok) { row.msgs.push(...r.errors); row.unsupported = r.unsupported; rows.push(row); continue; }
         doc = r.doc; warnings = r.warnings;
         if (await S.getDoc(doc.metadata.id)) { doc.metadata.id = crypto.randomUUID(); doc.metadata.name += ' (imported)'; warnings.push('A document with this ID already existed, so a copy was added.'); }
@@ -49,7 +49,7 @@ ctx.importFiles = async (files) => {
     [btn('Done', () => m.close(), 'primary')], () => ctx.refresh());
   return rows;
 };
-ctx.importPrompt = async () => { const f = await pickFiles('.dr3amy,.json,.ics,application/json,text/calendar'); if (f.length) ctx.importFiles(f); };
+ctx.importPrompt = async () => { const f = await pickFiles('.dr3amy,.ics,text/calendar,application/octet-stream'); if (f.length) ctx.importFiles(f); };
 
 async function route$() {
   const [path, qs] = (location.hash.slice(2) || 'home').split('?');
@@ -76,7 +76,7 @@ async function boot() {
   const nav = (k, ic) => h('a', { class: 'nav', href: '#/' + k }, icon(ic), APPS[k][0]);
   view = h('main', { id: 'view' });
   app.append(h('div', { class: 'shell' },
-    h('nav', { class: 'side', 'aria-label': 'Dr3amy apps' }, h('a', { class: 'brand', href: '#/home' }, h('img', { src: 'assets/icons/logo.svg', alt: '' }), 'Dr3amy'), nav('home', 'home'), nav('calendar', 'calendar'), nav('files', 'files'), nav('settings', 'settings'), h('div', { class: 'foot' }, 'Local-first · v1.0')), view));
+    h('nav', { class: 'side', 'aria-label': 'Dr3amy apps' }, h('a', { class: 'brand', href: '#/home' }, h('img', { src: 'assets/icons/logo.svg', alt: '' }), 'Dr3amy'), nav('home', 'home'), nav('calendar', 'calendar'), nav('files', 'files'), nav('settings', 'settings'), h('div', { class: 'foot' }, 'Local-first · v1.1')), view));
   addEventListener('hashchange', route$);
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) ctx.importFiles([...e.dataTransfer.files]); });

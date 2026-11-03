@@ -1,4 +1,4 @@
-import { h, icon, btn, iconBtn, modal, confirmBox, promptBox, empty, download, shareFile, fmtBytes, fmtDate, slug } from '../../core/utilities/ui.js';
+import { h, icon, typeTile, btn, iconBtn, modal, confirmBox, promptBox, empty, download, shareFile, fmtBytes, fmtDate, slug } from '../../core/utilities/ui.js';
 import * as S from '../../core/storage/storage.js';
 import * as E from '../../core/document-engine/engine.js';
 
@@ -14,7 +14,7 @@ export default async function mount(root, ctx, params) {
   };
   const editData = r => {
     const ta = h('textarea', { style: { minHeight: '280px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: '12px' }, spellcheck: 'false' }, JSON.stringify(r.doc.data, null, 2)), err = h('ul', { class: 'msgs err' });
-    const m = modal('Edit data (JSON)', h('div', { class: 'stack' }, ta, err), [btn('Cancel', () => m.close()), btn('Validate and save', async () => {
+    const m = modal('Edit data (text view)', h('div', { class: 'stack' }, ta, err), [btn('Cancel', () => m.close()), btn('Validate and save', async () => {
       err.replaceChildren(); let data;
       try { data = JSON.parse(ta.value); } catch (e) { err.append(h('li', {}, 'Invalid JSON: ' + e.message)); return; }
       const cand = { ...r.doc, data }, v = E.validate(cand);
@@ -43,7 +43,7 @@ export default async function mount(root, ctx, params) {
         btn('Edit data', () => editData(r)),
         btn('Duplicate', async () => { const c = structuredClone(d); c.metadata.id = crypto.randomUUID(); c.metadata.name += ' copy'; await S.saveDoc(c.metadata.id, c, Date.now()); sel = c.metadata.id; await load(); render(); }),
         btn('Export', () => download(slug(d.metadata.name) + '.dr3amy', E.serialize(d)), '', 'export'),
-        btn('Share', () => shareFile(slug(d.metadata.name) + '.dr3amy', E.serialize(d), 'application/json'), '', 'share'),
+        btn('Share', () => shareFile(slug(d.metadata.name) + '.dr3amy', E.serialize(d), 'application/octet-stream'), '', 'share'),
         btn('Delete', async () => { if (await confirmBox(`Delete “${d.metadata.name}” from this browser? Export it first if you need a copy.`)) { await S.delDoc(r.id); sel = null; await load(); render(); } }, 'danger', 'trash')));
   };
   const render = () => {
@@ -54,7 +54,7 @@ export default async function mount(root, ctx, params) {
       h('div', { class: 'row', style: { marginBottom: '16px' } }, h('h1', { class: 'grow' }, 'Files'), btn('Import', ctx.importPrompt, '', 'import'), btn('New file', () => create(), 'primary', 'plus')),
       h('div', { class: 'files' },
         h('div', { class: 'stack' }, h('div', { class: 'row' }, h('div', { class: 'grow' }, search), h('select', { 'aria-label': 'Filter by type', style: { width: 'auto' }, onchange: e => { type = e.target.value; render(); } }, h('option', { value: '' }, 'All types'), E.TYPES.map(t => h('option', { value: t, selected: t === type }, E.TYPE_LABEL[t])))),
-          list.length ? h('div', { class: 'list' }, list.map(r => h('button', { class: 'item', 'aria-selected': r.id === sel, onclick: () => { sel = r.id; render(); } }, icon('file'), h('div', { class: 'grow' }, h('div', {}, r.doc.metadata.name), h('div', { class: 'meta' }, fmtDate(r.doc.metadata.modified))), h('span', { class: 'chip-type' }, E.TYPE_LABEL[r.doc.$type]))))
+          list.length ? h('div', { class: 'list' }, list.map(r => h('button', { class: 'item', 'aria-selected': r.id === sel, onclick: () => { sel = r.id; render(); } }, typeTile(r.doc.$type), h('div', { class: 'grow' }, h('div', {}, r.doc.metadata.name), h('div', { class: 'meta' }, fmtDate(r.doc.metadata.modified))), h('span', { class: 'chip-type' }, E.TYPE_LABEL[r.doc.$type]))))
             : h('div', { class: 'list' }, empty(recs.length ? 'No matches' : 'No files yet', recs.length ? 'Try a different search or filter.' : 'Create a file or import a .dr3amy file. You can also drop files anywhere on this page.', btn('New file', () => create(), 'primary')))),
         cur ? detail(cur) : h('div', { class: 'panel' }, empty('Select a file', 'Preview, validate, rename, export or edit its data here.')))));
   };

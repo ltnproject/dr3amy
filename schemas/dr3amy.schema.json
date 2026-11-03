@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dr3amy.local/schemas/dr3amy-1.0.json",
-  "title": "Dr3amy document, format 1.0",
+  "title": "Dr3amy document, logical model 1.0",
+  "description": "Describes the decoded document tree used by tools. The on-disk encoding is the binary DR3A container, not JSON; see documentation/FILE-FORMAT.md.",
   "type": "object",
   "required": ["$format", "$version", "$type", "metadata", "data"],
   "properties": {

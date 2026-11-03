@@ -8,7 +8,7 @@ const ACC = { violet: ['#7c5cff', '#3b82f6'], ocean: ['#3b82f6', '#0ea5c9'], orc
 export async function makeBackup() {
   const recs = await S.allDocs(), prefs = await S.allPrefs();
   const w = E.create('workspace', 'Dr3amy Backup ' + ymd(new Date()), { items: recs.map(r => r.doc), preferences: prefs });
-  return ['dr3amy-backup-' + ymd(new Date()) + '.dr3amy', E.serialize(w), 'application/json'];
+  return ['dr3amy-backup-' + ymd(new Date()) + '.dr3amy', E.serialize(w), 'application/octet-stream'];
 }
 
 export default async function mount(root, ctx) {
@@ -27,8 +27,8 @@ export default async function mount(root, ctx) {
       row('Persistent storage', 'Asks the browser not to clear your data automatically. It may be declined, and it is still not a substitute for backups.', h('div', { class: 'row' }, persist, btn('Request', async () => { const ok = await S.requestPersist(); persist.textContent = ok ? 'On' : 'Declined by browser'; }))),
       row('Back up everything', 'Downloads one .dr3amy workspace file with all documents and preferences.', btn('Download backup', async () => { download(...(await makeBackup())); toast('Backup downloaded'); }, 'primary')),
       row('Restore from backup', 'Documents with the same ID are replaced.', btn('Choose file…', async () => {
-        const [f] = await pickFiles('.dr3amy,.json', false); if (!f) return;
-        const r = E.parse(await f.text());
+        const [f] = await pickFiles('.dr3amy,application/octet-stream', false); if (!f) return;
+        const r = E.parse(new Uint8Array(await f.arrayBuffer()));
         if (!r.ok || r.doc.$type !== 'workspace') return toast(r.ok ? 'That file is not a backup (type must be workspace).' : r.errors[0], 'error');
         if (!(await confirmBox(`Restore ${r.doc.data.items.length} document(s)? Matching IDs will be overwritten.`, 'Restore'))) return;
         for (const it of r.doc.data.items) { it.metadata.id ||= crypto.randomUUID(); await S.saveDoc(it.metadata.id, it, Date.now()); }
@@ -39,5 +39,5 @@ export default async function mount(root, ctx) {
     group('Privacy', h('div', { class: 'setrow' }, h('div', { class: 'stack' },
       h('p', {}, 'Dr3amy has no accounts, no analytics, and no telemetry. After the page loads it makes no network requests; your documents never leave this device unless you export or share them.'),
       h('p', { class: 'sub' }, 'Data is stored in this browser’s IndexedDB. That is convenient but not permanent: clearing site data, uninstalling the browser, private windows, or storage pressure can erase it. Browsers on different devices do not sync. Export files to keep real copies.')))),
-    group('About', row('Dr3amy', 'Format version ' + E.VERSION + ' · reads 1.x and migrates 0.9', h('b', {}, 'v1.0.0')), row('Keyboard shortcuts', null, btn('Show', ctx.shortcuts)))));
+    group('About', row('Dr3amy', 'Format version ' + E.VERSION + ' · reads 1.x and migrates 0.9', h('b', {}, 'v1.1.0')), row('Keyboard shortcuts', null, btn('Show', ctx.shortcuts)))));
 }
